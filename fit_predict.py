@@ -7,13 +7,14 @@ import argparse
 import numpy as np
 import os
 import pandas as pd
-
+import keras
 
 UNKNOWN_WORD = "_UNK_"
 END_WORD = "_END_"
 NAN_WORD = "_NAN_"
 
-CLASSES = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+#CLASSES = ["toxic", "severe_toxic", "obscene", "threat", "insult", "identity_hate"]
+CLASSES = ["emotion"]
 
 PROBABILITIES_NORMALIZE_COEFFICIENT = 1.4
 
@@ -45,6 +46,8 @@ def main():
     list_sentences_train = train_data["comment_text"].fillna(NAN_WORD).values
     list_sentences_test = test_data["comment_text"].fillna(NAN_WORD).values
     y_train = train_data[CLASSES].values
+    n_classes = y_train.nunique()
+    y_train = keras.utils.to_categorical(y_train, num_classes=n_classes)
 
     print("Tokenizing sentences in train set...")
     tokenized_sentences_train, words_dict = tokenize_sentences(list_sentences_train, {})
@@ -113,12 +116,14 @@ def main():
     test_predicts **= (1. / len(test_predicts_list))
     test_predicts **= PROBABILITIES_NORMALIZE_COEFFICIENT
 
-    test_ids = test_data["id"].values
-    test_ids = test_ids.reshape((len(test_ids), 1))
+    #test_ids = test_data["id"].values
+    #test_ids = test_ids.reshape((len(test_ids), 1))
+    y_pred = test_predicts.argmax(axis=-1)
 
-    test_predicts = pd.DataFrame(data=test_predicts, columns=CLASSES)
-    test_predicts["id"] = test_ids
-    test_predicts = test_predicts[["id"] + CLASSES]
+    #test_predicts = pd.DataFrame(data=test_predicts, columns=CLASSES)
+    #test_predicts["id"] = test_ids
+    #test_predicts = test_predicts[["id"] + CLASSES]
+    test_data['emotion_pred'] = y_pred
     submit_path = os.path.join(args.result_path, "submit")
     test_predicts.to_csv(submit_path, index=False)
 
